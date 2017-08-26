@@ -113,7 +113,9 @@ class ContentsHandler(APIHandler):
             raise web.HTTPError(400, u'Type %r is invalid' % type)
 
         format = self.get_query_argument('format', default=None)
-        if format not in {None, 'text', 'base64'}:
+        valid_formats = ({None, 'text', 'base64'} |
+                         set(self.contents_manager.external_formats))
+        if format not in valid_formats:
             raise web.HTTPError(400, u'Format %r is invalid' % format)
         content = self.get_query_argument('content', default='1')
         if content not in {'0', '1'}:
