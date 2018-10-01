@@ -354,6 +354,8 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
           If 'text', the contents will be decoded as UTF-8.
           If 'base64', the raw bytes contents will be encoded as base64.
           If not specified, try to decode as UTF-8, and fall back to base64
+          If other, the external_formarts dict (a triat of ContentsManager)
+            is expected to map format to handler function.
         """
         model = self._base_model(path)
         model['type'] = 'file'
@@ -362,13 +364,23 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
         model['mimetype'] = mimetypes.guess_type(os_path)[0]
 
         if content:
-            content, format = self._read_file(os_path, format)
-            if model['mimetype'] is None:
-                default_mime = {
-                    'text': 'text/plain',
-                    'base64': 'application/octet-stream'
-                }[format]
-                model['mimetype'] = default_mime
+            if format in {None, 'text', 'base64'}:
+                content, format = self._read_file(os_path, format)
+                if model['mimetype'] is None:
+                    default_mime = {
+                        'text': 'text/plain',
+                        'base64': 'application/octet-stream'
+                    }[format]
+                    model['mimetype'] = default_mime
+            else:
+                try:
+                    handler = self.external_formats[format]
+                except KeyError:
+                    raise web.HTTPError(
+                        400, u'the format %s is not registered' % format,
+                        reason='unknown format')
+                content = handler(model)
+                # TODO Should the handler also return a mimetype?
 
             model.update(
                 content=content,
