@@ -187,7 +187,7 @@ class ZMQChannelsHandler(AuthenticatedZMQStreamHandler):
         protocol_version = info.get('protocol_version', client_protocol_version)
         if protocol_version != client_protocol_version:
             self.session.adapt_version = int(protocol_version.split('.')[0])
-            self.log.info("Adapting to protocol v%s for kernel %s", protocol_version, self.kernel_id)
+            self.log.info("Adapting from protocol version {protocol_version} (kernel {kernel_id}) to {client_protocol_version} (client).".format(protocol_version=protocol_version, kernel_id=self.kernel_id, client_protocol_version=client_protocol_version))
         if not self._kernel_info_future.done():
             self._kernel_info_future.set_result(info)
     
@@ -306,8 +306,13 @@ class ZMQChannelsHandler(AuthenticatedZMQStreamHandler):
         if channel not in self.channels:
             self.log.warning("No such channel: %r", channel)
             return
-        stream = self.channels[channel]
-        self.session.send(stream, msg)
+        am = self.kernel_manager.allowed_message_types
+        mt = msg['header']['msg_type']
+        if am and mt not in am:
+            self.log.warning('Received message of type "%s", which is not allowed. Ignoring.' % mt)
+        else:
+            stream = self.channels[channel]
+            self.session.send(stream, msg)
 
     def _on_zmq_reply(self, stream, msg_list):
         idents, fed_msg_list = self.session.feed_identities(msg_list)

@@ -36,16 +36,18 @@ before_install:
     - |
       if [[ $GROUP == docs ]]; then
         pip install -r docs/doc-requirements.txt
+        pip install --upgrade pytest
       fi
     - |
       if [[ $GROUP == selenium ]]; then
-        pip install selenium
+        pip install --upgrade selenium pytest
         # Install Webdriver backend for Firefox:
         wget https://github.com/mozilla/geckodriver/releases/download/v0.19.1/geckodriver-v0.19.1-linux64.tar.gz
         mkdir geckodriver
         tar -xzf geckodriver-v0.19.1-linux64.tar.gz -C geckodriver
         export PATH=$PATH:$PWD/geckodriver
       fi
+    - pip install "attrs>=17.4.0"
 
 install:
     - pip install --pre .[test]
