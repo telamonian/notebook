@@ -287,6 +287,25 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
             model['writable'] = False
         return model
 
+    def _base_external_model(self, path, content=True, format=None):
+        """Build the common base of a contents model for an externally
+        handled file
+        """
+        # Create the base model.
+        model = {}
+        model['name'] = path.rsplit('/', 1)[-1]
+        model['path'] = path
+        model['type'] = 'external'
+        model['last_modified'] = datetime(1970, 1, 1, 0, 0, tzinfo=tz.UTC)
+        model['created'] = datetime(1970, 1, 1, 0, 0, tzinfo=tz.UTC)
+        model['content'] = content
+        model['format'] = format
+        model['mimetype'] = None
+        model['size'] = None
+        model['writable'] = False
+
+        return model
+
     def _dir_model(self, path, content=True):
         """Build a model for a directory
 
@@ -406,8 +425,9 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
         content : bool
             Whether to include the contents in the reply
         type : str, optional
-            The requested type - 'file', 'notebook', or 'directory'.
-            Will raise HTTPError 400 if the content doesn't match.
+            The requested type - 'file', 'notebook', 'directory', or one
+            of the keys in self.external_types. Will raise HTTPError 400
+            if the content doesn't match.
         format : str, optional
             The requested format for file contents. 'text' or 'base64'.
             Ignored if this returns a notebook or directory model.
@@ -418,6 +438,13 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
             the contents model. If content=True, returns the contents
             of the file or directory as well.
         """
+        from IPython.core.debugger import Pdb; Pdb().set_trace()
+        if type in self.external_types:
+            # skip existence checks and use custom model handling
+            model = self._base_external_model(path, content=content, format=format)
+            _external_model = self.external_types[type]
+            return _external_model(model)
+
         path = path.strip('/')
 
         if not self.exists(path):

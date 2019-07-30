@@ -103,6 +103,21 @@ class ContentsManager(LoggingConfigurable):
         """
     )
 
+    external_types = Dict(config=True,
+        help="""Functions for providing models of external resources.
+        
+        Maps formats like 'external+hdf5.group' or 
+        'external+hdf5.dataset' to a function that takes a model
+        dict and returns a (possibly) modified model dict:
+        `model_func(model: Dict[str, Any]) -> Dict[str, Any]`
+    
+        The requester should be configured in a coordinated
+        way, able to interpret what this function returns.
+    
+        For example, the function might return connection
+        information for some external server that provides
+        access to a file-like resource.""")
+
     @validate('pre_save_hook')
     def _validate_pre_save_hook(self, proposal):
         value = proposal['value']
