@@ -287,7 +287,7 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
             model['writable'] = False
         return model
 
-    def _base_external_model(self, path, content=True, format=None):
+    def _base_external_model(self, path, content=True, format=None, type=None):
         """Build the common base of a contents model for an externally
         handled file
         """
@@ -295,7 +295,7 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
         model = {}
         model['name'] = path.rsplit('/', 1)[-1]
         model['path'] = path
-        model['type'] = 'external'
+        model['type'] = type
         model['last_modified'] = datetime(1970, 1, 1, 0, 0, tzinfo=tz.UTC)
         model['created'] = datetime(1970, 1, 1, 0, 0, tzinfo=tz.UTC)
         model['content'] = content
@@ -438,10 +438,9 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
             the contents model. If content=True, returns the contents
             of the file or directory as well.
         """
-        from IPython.core.debugger import Pdb; Pdb().set_trace()
         if type in self.external_types:
             # skip existence checks and use custom model handling
-            model = self._base_external_model(path, content=content, format=format)
+            model = self._base_external_model(path, content=content, format=format, type=type)
             _external_model = self.external_types[type]
             return _external_model(model)
 
